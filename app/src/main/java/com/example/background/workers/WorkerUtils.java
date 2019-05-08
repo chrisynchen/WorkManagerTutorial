@@ -57,7 +57,7 @@ final class WorkerUtils {
      * @param message Message shown on the notification
      * @param context Context needed to create Toast
      */
-    static void makeStatusNotification(String message, Context context) {
+    public static void makeStatusNotification(String message, Context context) {
 
         // Make a channel if necessary
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -94,7 +94,7 @@ final class WorkerUtils {
     /**
      * Method for sleeping for a fixed about of time to emulate slower work
      */
-    static void sleep() {
+    public static void sleep() {
         try {
             Thread.sleep(DELAY_TIME_MILLIS, 0);
         } catch (InterruptedException e) {
@@ -109,7 +109,7 @@ final class WorkerUtils {
      * @return Blurred bitmap image
      */
     @WorkerThread
-    static Bitmap blurBitmap(@NonNull Bitmap bitmap,
+    public static Bitmap blurBitmap(@NonNull Bitmap bitmap,
                              @NonNull Context applicationContext) {
 
         RenderScript rsContext = null;
@@ -145,7 +145,7 @@ final class WorkerUtils {
      * @return Uri for temp file with bitmap
      * @throws FileNotFoundException Throws if bitmap file cannot be found
      */
-    static Uri writeBitmapToFile(
+    public static Uri writeBitmapToFile(
             @NonNull Context applicationContext,
             @NonNull Bitmap bitmap) throws FileNotFoundException {
 
