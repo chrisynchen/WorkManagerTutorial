@@ -27,7 +27,7 @@ class BlurWorker(appContext: Context, param: WorkerParameters) : Worker(appConte
         val resourceUri = inputData.getString(Constants.KEY_IMAGE_URI)
 
         try {
-            Log.e(TAG, (Looper.myLooper() == Looper.getMainLooper()).toString())
+            Log.e(TAG, "is main thread:" + (Looper.myLooper() == Looper.getMainLooper()).toString())
             //this is from drawable
 //            val picture = BitmapFactory.decodeResource(
 //                    applicationContext.resources,

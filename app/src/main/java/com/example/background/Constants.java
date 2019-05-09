@@ -35,7 +35,9 @@ public final class Constants {
     // Other keys
     public static final String OUTPUT_PATH = "blur_filter_outputs";
     public static final String KEY_IMAGE_URI = "KEY_IMAGE_URI";
+    public static final String KEY_COUNTER = "KEY_COUNTER";
     static final String TAG_OUTPUT = "OUTPUT";
+    static final String TAG_SAVE = "TAG_SAVE";
 
     public static final long DELAY_TIME_MILLIS = 3000;
 

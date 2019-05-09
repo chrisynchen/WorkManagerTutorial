@@ -18,11 +18,19 @@ package com.example.background;
 
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.example.background.workers.BlurWorker;
 import com.example.background.workers.CleanupWorker;
+import com.example.background.workers.RxSampleWorker;
 import com.example.background.workers.SaveImageToFileWorker;
+import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.work.Constraints;
 import androidx.work.Data;
@@ -30,19 +38,27 @@ import androidx.work.ExistingWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkContinuation;
+import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import static com.example.background.Constants.IMAGE_MANIPULATION_WORK_NAME;
 import static com.example.background.Constants.KEY_IMAGE_URI;
+import static com.example.background.Constants.TAG_OUTPUT;
+import static com.example.background.Constants.TAG_SAVE;
 
 public class BlurViewModel extends ViewModel {
+
+    private static final String TAG = BlurViewModel.class.getSimpleName();
 
     private Uri mImageUri;
 
     private WorkManager mWorkManager;
 
+    private LiveData<List<WorkInfo>> mSavedWorkInfo;
+
     public BlurViewModel() {
         mWorkManager = WorkManager.getInstance();
+        mSavedWorkInfo = mWorkManager.getWorkInfosByTagLiveData(TAG_OUTPUT);
     }
 
     /**
@@ -58,6 +74,12 @@ public class BlurViewModel extends ViewModel {
         return builder.build();
     }
 
+    private Data createLogCounter() {
+        Data.Builder builder = new Data.Builder();
+        builder.putInt(KEY_IMAGE_URI, 0);
+        return builder.build();
+    }
+
     /**
      * Create the WorkRequest to apply the blur and save the resulting image
      *
@@ -65,7 +87,6 @@ public class BlurViewModel extends ViewModel {
      */
     void applyBlur(int blurLevel) {
 
-        //beginWith run in parallel
 //        WorkContinuation continuation = mWorkManager.beginWith(OneTimeWorkRequest.from(CleanupWorker.class));
 
         //beginUniqueWork run in sequence
@@ -91,6 +112,7 @@ public class BlurViewModel extends ViewModel {
 
         OneTimeWorkRequest save =
                 new OneTimeWorkRequest.Builder(SaveImageToFileWorker.class)
+                        .addTag(TAG_OUTPUT)
                         .build();
         continuation = continuation.then(save);
 
@@ -98,15 +120,47 @@ public class BlurViewModel extends ViewModel {
         continuation.enqueue();
     }
 
-    void cleanup() {
-        OneTimeWorkRequest cleanupWorker =
-                new OneTimeWorkRequest.Builder(CleanupWorker.class)
+    void applyBlurOneTime() {
+
+        OneTimeWorkRequest blurWorkRequest =
+                new OneTimeWorkRequest.Builder(BlurWorker.class)
+                        .setInputData(createInputDataForUri()).build();
+
+        OneTimeWorkRequest save =
+                new OneTimeWorkRequest.Builder(SaveImageToFileWorker.class)
                         .setConstraints(new Constraints.Builder()
                                 .setRequiredNetworkType(NetworkType.CONNECTED)
                                 .setRequiresCharging(true).build())
+                        .addTag(TAG_SAVE)
+                        .setInitialDelay(5, TimeUnit.SECONDS)
                         .build();
 
-        mWorkManager.enqueue(cleanupWorker);
+        mWorkManager.beginWith(blurWorkRequest).then(save).enqueue();
+        ListenableFuture<WorkInfo> blurWorkInfo = mWorkManager.getWorkInfoById(blurWorkRequest.getId());
+        ListenableFuture<List<WorkInfo>> saveWorkInfo = mWorkManager.getWorkInfosByTag(TAG_SAVE);
+        try {
+            Log.i(TAG, "saveWorkInfo:" + saveWorkInfo.get().get(0).getState().toString());
+            Log.i(TAG, "blurWorkInfo:" + blurWorkInfo.get().getState().toString());
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void startLogWork() {
+
+        //PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS
+//        PeriodicWorkRequest periodicWorkRequest =
+//                new PeriodicWorkRequest.Builder(LogWorker.class, 3, TimeUnit.SECONDS)
+//                        .setInputData(createLogCounter())
+//                        .build();
+//        mWorkManager.enqueue(periodicWorkRequest);
+
+        OneTimeWorkRequest rxSampleRequest =
+                new OneTimeWorkRequest.Builder(RxSampleWorker.class)
+                        .setInputData(createLogCounter()).build();
+        mWorkManager.enqueue(rxSampleRequest);
     }
 
     private Uri uriOrNull(String uriString) {
@@ -130,4 +184,5 @@ public class BlurViewModel extends ViewModel {
         return mImageUri;
     }
 
+    LiveData<List<WorkInfo>> getOutputWorkInfo() { return mSavedWorkInfo; }
 }

@@ -1,6 +1,7 @@
 package com.example.background.workers
 
 import android.content.Context
+import android.os.Handler
 import android.text.TextUtils
 import android.util.Log
 import androidx.work.ListenableWorker
@@ -18,30 +19,35 @@ class CleanupWorker(appContext: Context, param: WorkerParameters) : Worker(appCo
     private val TAG = CleanupWorker::class.java.simpleName
 
     override fun doWork(): ListenableWorker.Result {
-        val applicationContext = applicationContext
+        return try {
+//            Handler().postDelayed({
+                busyWork(applicationContext)
+//            }, 5000)
 
-        try {
-            val outputDirectory = File(applicationContext.filesDir,
-                    OUTPUT_PATH)
-            if (outputDirectory.exists()) {
-                val entries = outputDirectory.listFiles()
-                if (!entries.isNullOrEmpty()) {
-                    for (entry in entries) {
-                        val name = entry.name
-                        if (!TextUtils.isEmpty(name) && name.endsWith(".png")) {
-                            val deleted = entry.delete()
-                            Log.i(TAG, String.format("Deleted %s - %s",
-                                    name, deleted))
-                        }
+            ListenableWorker.Result.success()
+        } catch (exception: Exception) {
+            Log.e(TAG, "Error cleaning up", exception)
+            ListenableWorker.Result.failure()
+        }
+    }
+
+    private fun busyWork(appContext: Context) {
+        val outputDirectory = File(appContext.filesDir,
+                OUTPUT_PATH)
+        if (outputDirectory.exists()) {
+            val entries = outputDirectory.listFiles()
+            if (!entries.isNullOrEmpty()) {
+                for (entry in entries) {
+                    val name = entry.name
+                    if (!TextUtils.isEmpty(name) && name.endsWith(".png")) {
+                        val deleted = entry.delete()
+                        Log.i(TAG, String.format("Deleted %s - %s",
+                                name, deleted))
                     }
                 }
             }
-
-            return ListenableWorker.Result.success()
-        } catch (exception: Exception) {
-            Log.e(TAG, "Error cleaning up", exception)
-            return ListenableWorker.Result.failure()
         }
 
+        Log.i(TAG, "CleanupWorker finished")
     }
 }
