@@ -3,6 +3,8 @@ WorkManagerTutorial
 
 This repository contains the code for the [WorkManager Codelab](https://codelabs.developers.google.com/codelabs/android-workmanager)
 
+Slides:[here](https://docs.google.com/presentation/d/1fZjtTG4cSOgyPUa0cK3h1kXwviDo6VuVranHqxB32q4/edit?usp=sharing)
+
 
 Pre-requisites
 --------------
@@ -31,3 +33,9 @@ if you don't already have it.
 2. Download the sample.
 2. Import the sample into Android Studio.
 3. Build and run the sample.
+
+
+Note
+---------------
+
+This repository origin owner is google codelab. Just add some simple example for every one know more about workmanager.
