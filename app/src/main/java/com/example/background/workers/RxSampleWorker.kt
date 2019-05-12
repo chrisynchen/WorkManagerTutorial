@@ -8,6 +8,7 @@ import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 
 /**
  * @author chenchris on 2019/5/9.
@@ -18,6 +19,9 @@ class RxSampleWorker(appContext: Context, param: WorkerParameters) : RxWorker(ap
 
     override fun createWork(): Single<Result> {
         return Observable.range(0, 100)
+                .concatMap {
+                    Observable.just(it).delay(5, TimeUnit.SECONDS)
+                }
                 .doOnNext {
                     Log.i(TAG, it.toString())
                 }

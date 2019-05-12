@@ -22,6 +22,7 @@ import android.util.Log;
 
 import com.example.background.workers.BlurWorker;
 import com.example.background.workers.CleanupWorker;
+import com.example.background.workers.LogWorker;
 import com.example.background.workers.RxSampleWorker;
 import com.example.background.workers.SaveImageToFileWorker;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -37,6 +38,7 @@ import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkContinuation;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
@@ -124,22 +126,22 @@ public class BlurViewModel extends ViewModel {
 
         OneTimeWorkRequest blurWorkRequest =
                 new OneTimeWorkRequest.Builder(BlurWorker.class)
+                        .setConstraints(new Constraints.Builder()
+                                .setRequiredNetworkType(NetworkType.CONNECTED)
+                                .setRequiresCharging(true).build())
                         .setInputData(createInputDataForUri()).build();
 
         OneTimeWorkRequest save =
                 new OneTimeWorkRequest.Builder(SaveImageToFileWorker.class)
-                        .setConstraints(new Constraints.Builder()
-                                .setRequiredNetworkType(NetworkType.CONNECTED)
-                                .setRequiresCharging(true).build())
                         .addTag(TAG_SAVE)
                         .setInitialDelay(5, TimeUnit.SECONDS)
                         .build();
 
         mWorkManager.beginWith(blurWorkRequest).then(save).enqueue();
         ListenableFuture<WorkInfo> blurWorkInfo = mWorkManager.getWorkInfoById(blurWorkRequest.getId());
-        ListenableFuture<List<WorkInfo>> saveWorkInfo = mWorkManager.getWorkInfosByTag(TAG_SAVE);
+        ListenableFuture<WorkInfo> saveWorkInfo = mWorkManager.getWorkInfoById(save.getId());
         try {
-            Log.i(TAG, "saveWorkInfo:" + saveWorkInfo.get().get(0).getState().toString());
+            Log.i(TAG, "saveWorkInfo:" + saveWorkInfo.get().getState().toString());
             Log.i(TAG, "blurWorkInfo:" + blurWorkInfo.get().getState().toString());
         } catch (ExecutionException e) {
             e.printStackTrace();
